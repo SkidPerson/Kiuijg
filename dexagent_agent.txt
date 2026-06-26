@@ -1,10 +1,9 @@
 --[[
     Dex
-    Version 3.1
-    Agent Edition
-
+    Version 3.1 - Modified with SecretServicePanel
+    
     Developed by Chillz
-    Modified by Yoolz
+    Modified by Yoolz - Replaced Console with SecretServicePanel
 ]]
 
 local selection
@@ -15486,7 +15485,7 @@ local function main()
 			return outrosJogadores
 		end
 		
-		-- Botão toggle (>) convertido para ImageButton
+		-- Botão toggle (ImageButton)
 		local botaoToggle = Instance.new("ImageButton", scrollFrame)
 		botaoToggle.Name = "ToggleButton"
 		botaoToggle.BorderSizePixel = 0
@@ -15494,6 +15493,7 @@ local function main()
 		botaoToggle.Size = UDim2.new(0, 16, 0, 16)
 		botaoToggle.Position = UDim2.new(0, 0, 0, 0)
 		botaoToggle.Image = "rbxassetid://116669447347771"
+		botaoToggle.ImageColor3 = Color3.fromRGB(255, 255, 255)
 		botaoToggle.ZIndex = 2
 		
 		-- Criar ImageLabel para o ícone do minimize
@@ -15516,7 +15516,7 @@ local function main()
 		labelToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 		labelToggle.Size = UDim2.new(0, 174, 0, 14)
 		labelToggle.Position = UDim2.new(0, 18, 0, 2)
-		labelToggle.Text = "PlayerData"
+		labelToggle.Text = "DataStore Editor"
 		labelToggle.TextSize = 9
 		labelToggle.TextXAlignment = Enum.TextXAlignment.Left
 		
@@ -15643,7 +15643,6 @@ return {
 	Main          = main,
 	PluginData    = plugin_data,
 }
-
 
 ]]
 
