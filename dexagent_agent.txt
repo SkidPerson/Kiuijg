@@ -15035,11 +15035,6 @@ Main = (function()
 	return Main
 end)()
 
--- Start
-Main.Init()
-
---for i,v in pairs(Main.MissingEnv) do print(i,v) end
-
 -- Rspy Plugin
 
 local plugin_src = [[
@@ -15443,7 +15438,7 @@ local main_ref, lib_ref, apps_ref, settings_ref
 local explorer_ref, properties_ref
 
 local plugin_data = {
-	name         = "DataStoreEditor",
+	Name         = "DataStoreEditor",
 	FriendlyName = "DataStore Editor",
 }
 
@@ -15674,6 +15669,10 @@ return {
 if not isfolder("dex/plugins") then makefolder("dex/plugins") end
 writefile("dex/plugins/DataStoreEditor.lua", datastore_plugin_src)
 
+-- Start
+Main.Init()
+
+--for i,v in pairs(Main.MissingEnv) do print(i,v) end
 -- Adonis related 
 local function InitAdonisBypass()
 	local Adonis = { Name = "Adonis", Game = "*" }
@@ -15726,4 +15725,3 @@ local function InitAdonisBypass()
 end
 
 InitAdonisBypass()
-        
