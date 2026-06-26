@@ -15535,7 +15535,7 @@ local function main()
 		labelToggle.BackgroundTransparency = 1
 		labelToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 		labelToggle.Size = UDim2.new(0, 174, 0, 14)
-		labelToggle.Position = UDim2.new(0, 18, 0, 2)
+		labelToggle.Position = UDim2.new(0, 87, 0, 2)
 		labelToggle.Text = "Player Data"
 		labelToggle.TextSize = 9
 		labelToggle.TextXAlignment = Enum.TextXAlignment.Left
