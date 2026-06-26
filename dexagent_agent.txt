@@ -1,9 +1,10 @@
 --[[
     Dex
-    Version 3.1 - Modified with SecretServicePanel
-    
+    Version 3.1
+    Agent Edition
+
     Developed by Chillz
-    Modified by Yoolz - Replaced Console with SecretServicePanel
+    Modified by Yoolz
 ]]
 
 local selection
@@ -15486,15 +15487,14 @@ local function main()
 		end
 		
 		-- Botão toggle (>) simples
-		local botaoToggle = Instance.new("TextButton", scrollFrame)
+		local botaoToggle = Instance.new("ImageButton", scrollFrame)
 		botaoToggle.Name = "ToggleButton"
-		botaoToggle.BorderSizePixel = 0
-		botaoToggle.TextSize = 9
-		botaoToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 		botaoToggle.BackgroundTransparency = 1
+		botaoToggle.BorderSizePixel = 0
+		botaoToggle.Image = "rbxassetid://116669447347771"
 		botaoToggle.Size = UDim2.new(0, 16, 0, 16)
 		botaoToggle.Position = UDim2.new(0, 0, 0, 0)
-		botaoToggle.Text = ">"
+		botaoToggle.ImageColor3 = Color3.fromRGB(255, 255, 255)
 		botaoToggle.TextScaled = false
 		botaoToggle.ZIndex = 2
 		
@@ -15518,7 +15518,7 @@ local function main()
 		labelToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 		labelToggle.Size = UDim2.new(0, 174, 0, 14)
 		labelToggle.Position = UDim2.new(0, 18, 0, 2)
-		labelToggle.Text = "DataStore Editor"
+		labelToggle.Text = "PlayerData"
 		labelToggle.TextSize = 9
 		labelToggle.TextXAlignment = Enum.TextXAlignment.Left
 		
