@@ -15486,16 +15486,14 @@ local function main()
 			return outrosJogadores
 		end
 		
-		-- Botão toggle (>) simples
+		-- Botão toggle (>) convertido para ImageButton
 		local botaoToggle = Instance.new("ImageButton", scrollFrame)
 		botaoToggle.Name = "ToggleButton"
-		botaoToggle.BackgroundTransparency = 1
 		botaoToggle.BorderSizePixel = 0
-		botaoToggle.Image = "rbxassetid://116669447347771"
+		botaoToggle.BackgroundTransparency = 1
 		botaoToggle.Size = UDim2.new(0, 16, 0, 16)
 		botaoToggle.Position = UDim2.new(0, 0, 0, 0)
-		botaoToggle.ImageColor3 = Color3.fromRGB(255, 255, 255)
-		botaoToggle.TextScaled = false
+		botaoToggle.Image = "rbxassetid://116669447347771"
 		botaoToggle.ZIndex = 2
 		
 		-- Criar ImageLabel para o ícone do minimize
@@ -15611,7 +15609,7 @@ local function main()
 		-- Conectar clique do botão toggle
 		botaoToggle.MouseButton1Click:Connect(function()
 			botoesVisiveis = not botoesVisiveis
-			botaoToggle.Text = botoesVisiveis and "" or ">"
+			botaoToggle.ImageTransparency = botoesVisiveis and 1 or 0
 			minIcon.Visible = botoesVisiveis
 			
 			-- Mostrar/esconder botão do jogador local e botões dos outros
@@ -15645,6 +15643,7 @@ return {
 	Main          = main,
 	PluginData    = plugin_data,
 }
+
 
 ]]
 
