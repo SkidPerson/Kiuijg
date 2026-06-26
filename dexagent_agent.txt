@@ -15522,18 +15522,32 @@ local function main()
 		labelToggle.TextSize = 9
 		labelToggle.TextXAlignment = Enum.TextXAlignment.Left
 		
-		-- Label com o nome do jogador local (abaixo de DataStore Editor)
-		local labelLocalPlayer = Instance.new("TextLabel", scrollFrame)
-		labelLocalPlayer.Name = "LocalPlayerLabel"
-		labelLocalPlayer.BorderSizePixel = 0
-		labelLocalPlayer.BackgroundTransparency = 1
-		labelLocalPlayer.TextColor3 = Color3.fromRGB(255, 255, 255)
-		labelLocalPlayer.Size = UDim2.new(0, 228, 0, 16)
-		labelLocalPlayer.Position = UDim2.new(0, 92, 0, 20)
-		labelLocalPlayer.Text = "'" .. localPlayerName .. "'"
-		labelLocalPlayer.TextSize = 9
-		labelLocalPlayer.TextXAlignment = Enum.TextXAlignment.Left
-		labelLocalPlayer.Visible = botoesVisiveis
+		-- Botão com o nome do jogador local (abaixo de DataStore Editor) - CLICÁVEL
+		local botaoLocalPlayer = Instance.new("TextButton", scrollFrame)
+		botaoLocalPlayer.Name = "LocalPlayerButton"
+		botaoLocalPlayer.BorderSizePixel = 0
+		botaoLocalPlayer.TextXAlignment = Enum.TextXAlignment.Left
+		botaoLocalPlayer.TextColor3 = Color3.fromRGB(255, 255, 255)
+		botaoLocalPlayer.BackgroundTransparency = 1
+		botaoLocalPlayer.Size = UDim2.new(0, 228, 0, 16)
+		botaoLocalPlayer.Position = UDim2.new(0, 92, 0, 20)
+		botaoLocalPlayer.Text = "'" .. localPlayerName .. "'"
+		botaoLocalPlayer.TextSize = 9
+		botaoLocalPlayer.Visible = botoesVisiveis
+		
+		-- Conectar clique - fundo fica azul ao selecionar
+		botaoLocalPlayer.MouseButton1Click:Connect(function()
+			-- Desselecionar anterior
+			if selectedButton then
+				selectedButton.BackgroundTransparency = 1
+				selectedButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			end
+			
+			-- Selecionar este - fundo azul
+			selectedButton = botaoLocalPlayer
+			botaoLocalPlayer.BackgroundTransparency = 0
+			botaoLocalPlayer.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+		end)
 		
 		-- Função para criar item de jogador (botão)
 		local function criarBotaoJogador(nome, yPos)
@@ -15586,7 +15600,7 @@ local function main()
 			end
 			
 			-- Atualizar visibilidade baseado no estado
-			labelLocalPlayer.Visible = botoesVisiveis
+			botaoLocalPlayer.Visible = botoesVisiveis
 			for _, btn in ipairs(playerButtons) do
 				btn.Visible = botoesVisiveis
 			end
@@ -15600,8 +15614,8 @@ local function main()
 			botaoToggle.Text = botoesVisiveis and "" or ">"
 			minIcon.Visible = botoesVisiveis
 			
-			-- Mostrar/esconder label do jogador local e botões dos outros
-			labelLocalPlayer.Visible = botoesVisiveis
+			-- Mostrar/esconder botão do jogador local e botões dos outros
+			botaoLocalPlayer.Visible = botoesVisiveis
 			for _, btn in ipairs(playerButtons) do
 				btn.Visible = botoesVisiveis
 			end
