@@ -15511,7 +15511,7 @@ local function main()
 		botaoToggle.BorderSizePixel = 0
 		botaoToggle.BackgroundTransparency = 1
 		botaoToggle.Size = UDim2.new(0, 11, 0, 11)
-		botaoToggle.Position = UDim2.new(0, 1, 0, 0)
+		botaoToggle.Position = UDim2.new(0, -2, 3, 0)
 		botaoToggle.Image = "rbxassetid://116669447347771"
 		botaoToggle.ImageColor3 = Color3.fromRGB(255, 255, 255)
 		botaoToggle.ZIndex = 2
