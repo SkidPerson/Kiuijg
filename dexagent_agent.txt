@@ -15468,6 +15468,7 @@ local function main()
 		
 		local selectedButton = nil
 		local botoesVisiveis = false
+		local playerButtons = {}
 		
 		-- Obter jogador local
 		local localPlayer = game:GetService("Players").LocalPlayer
@@ -15484,8 +15485,9 @@ local function main()
 			return outrosJogadores
 		end
 		
-		-- Botão toggle (v / >) - na posição original
+		-- Botão toggle (>) simples - SEM ícone do Dex
 		local botaoToggle = Instance.new("TextButton", scrollFrame)
+		botaoToggle.Name = "ToggleButton"
 		botaoToggle.BorderSizePixel = 0
 		botaoToggle.TextSize = 9
 		botaoToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -15493,9 +15495,11 @@ local function main()
 		botaoToggle.Size = UDim2.new(0, 16, 0, 16)
 		botaoToggle.Position = UDim2.new(0, 0, 0, 0)
 		botaoToggle.Text = ">"
+		botaoToggle.TextScaled = false
 		
 		-- Label info do toggle
 		local labelToggle = Instance.new("TextLabel", botaoToggle)
+		labelToggle.Name = "Label"
 		labelToggle.BorderSizePixel = 0
 		labelToggle.BackgroundTransparency = 1
 		labelToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -15503,10 +15507,12 @@ local function main()
 		labelToggle.Position = UDim2.new(0, 18, 0, 2)
 		labelToggle.Text = "DataStore Editor"
 		labelToggle.TextSize = 9
+		labelToggle.TextXAlignment = Enum.TextXAlignment.Left
 		
 		-- Função para criar item de jogador (botão)
 		local function criarBotaoJogador(nome, yPos)
 			local botaoJogador = Instance.new("TextButton", scrollFrame)
+			botaoJogador.Name = "PlayerButton"
 			botaoJogador.BorderSizePixel = 0
 			botaoJogador.TextXAlignment = Enum.TextXAlignment.Left
 			botaoJogador.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -15515,6 +15521,9 @@ local function main()
 			botaoJogador.Position = UDim2.new(0, 92, 0, yPos)
 			botaoJogador.Text = "'" .. nome .. "'"
 			botaoJogador.TextSize = 9
+			botaoJogador.Visible = botoesVisiveis
+			
+			table.insert(playerButtons, botaoJogador)
 			
 			-- Conectar clique - fundo fica azul ao selecionar
 			botaoJogador.MouseButton1Click:Connect(function()
@@ -15535,27 +15544,28 @@ local function main()
 		
 		-- Função para reconstruir a lista
 		local function reconstruirLista()
-			-- Limpar itens anteriores (não o botão toggle)
-			local children = scrollFrame:GetChildren()
-			for i = #children, 1, -1 do
-				if children[i] ~= botaoToggle then
-					children[i]:Destroy()
-				end
+			-- Limpar botões de jogadores anteriores
+			for _, btn in ipairs(playerButtons) do
+				btn:Destroy()
 			end
+			playerButtons = {}
 			
-			local yOffset = 0
+			local yOffset = 20
 			
 			-- Criar botão do jogador local
-			if botoesVisiveis then
-				criarBotaoJogador(localPlayerName, yOffset)
+			criarBotaoJogador(localPlayerName, yOffset)
+			yOffset = yOffset + 18
+			
+			-- Criar botões dos outros jogadores
+			local outrosJogadores = obterOutrosJogadores()
+			for _, playerName in ipairs(outrosJogadores) do
+				criarBotaoJogador(playerName, yOffset)
 				yOffset = yOffset + 18
-				
-				-- Criar botões dos outros jogadores
-				local outrosJogadores = obterOutrosJogadores()
-				for _, playerName in ipairs(outrosJogadores) do
-					criarBotaoJogador(playerName, yOffset)
-					yOffset = yOffset + 18
-				end
+			end
+			
+			-- Atualizar visibilidade baseado no estado
+			for _, btn in ipairs(playerButtons) do
+				btn.Visible = botoesVisiveis
 			end
 			
 			scrollFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 20)
@@ -15565,8 +15575,15 @@ local function main()
 		botaoToggle.MouseButton1Click:Connect(function()
 			botoesVisiveis = not botoesVisiveis
 			botaoToggle.Text = botoesVisiveis and "v" or ">"
-			reconstruirLista()
+			
+			-- Mostrar/esconder botões dos jogadores
+			for _, btn in ipairs(playerButtons) do
+				btn.Visible = botoesVisiveis
+			end
 		end)
+		
+		-- Criar lista inicial
+		reconstruirLista()
 		
 		-- Atualizar lista quando jogadores entrarem/saírem
 		game:GetService("Players").PlayerAdded:Connect(function()
