@@ -13758,6 +13758,20 @@ Main = (function()
 				local control = loadedPlugin
 				control.InitDeps(Main.GetInitDeps())
 
+				local appTable = {
+					Explorer = Apps.Explorer,
+					Properties = Apps.Properties,
+					ScriptViewer = Apps.ScriptViewer,
+					SecretServicePanel = Apps.SecretServicePanel,
+					SaveInstance = Apps.SaveInstance,
+					ModelViewer = Apps.ModelViewer,
+					Notebook = Apps.Notebook,
+					SettingsWindow = Apps.SettingsWindow,
+				}
+				if control.InitAfterMain then
+					control.InitAfterMain(appTable)
+				end
+
 				local moduleData = control.Main()
 				Apps[pluginDir] = moduleData
 				Main.AppControls[pluginDir] = control
