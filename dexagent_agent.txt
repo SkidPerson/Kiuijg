@@ -14967,22 +14967,33 @@ Main = (function()
 			if #listfiles("dex/plugins") > 0 then
 				intro.SetProgress("Loading Plugin Files",0.8)
 				for _, pluginDir in pairs(listfiles("dex/plugins")) do
-					local moduleData = Main.LoadPluginFile(pluginDir)
-					moduleData.PluginData = moduleData.PluginData or {}
+					local ok, err = pcall(function()
+						local moduleData = Main.LoadPluginFile(pluginDir)
+						if not moduleData then return end
+						moduleData.PluginData = moduleData.PluginData or {}
 
-					moduleData.Init()
+						local pluginFriendlyName = moduleData.PluginData.FriendlyName or "Unnamed Plugin"
+						intro.SetProgress("Initializing Plugin: ".. pluginFriendlyName, 0.9)
 
-					local pluginFriendlyName = moduleData.PluginData.FriendlyName or moduleData.Window.GuiElems.Title.Text or "Unnamed Plugin"
-					local pluginName = moduleData.PluginData.Name or moduleData.Window.GuiElems.Title.Text:gsub(" ", "") or "unnamedPlugin"
+						local initOk, initErr = pcall(moduleData.Init)
+						if not initOk then
+							warn("Plugin Init failed ("..pluginFriendlyName.."): "..tostring(initErr))
+							return
+						end
 
-					intro.SetProgress("Initializing Plugin: ".. pluginFriendlyName,0.9)
+						pluginFriendlyName = moduleData.PluginData.FriendlyName or "Unnamed Plugin"
+						local pluginName = moduleData.PluginData.Name or pluginFriendlyName:gsub(" ", "") or "unnamedPlugin"
 
-					moduleData.PluginData.Name = pluginName
-					moduleData.PluginData.FriendlyName = pluginFriendlyName
+						moduleData.PluginData.Name = pluginName
+						moduleData.PluginData.FriendlyName = pluginFriendlyName
 
-					table.insert(Main.Plugins, moduleData)
+						table.insert(Main.Plugins, moduleData)
+					end)
+					if not ok then
+						warn("Plugin load failed ("..tostring(pluginDir).."): "..tostring(err))
+					end
 				end
-			end	
+			end
 		end
 		
 		
