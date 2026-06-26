@@ -15510,7 +15510,7 @@ local function main()
 		botaoToggle.Name = "ToggleButton"
 		botaoToggle.BorderSizePixel = 0
 		botaoToggle.BackgroundTransparency = 1
-		botaoToggle.Size = UDim2.new(0, 16, 0, 16)
+		botaoToggle.Size = UDim2.new(0, 11, 0, 11)
 		botaoToggle.Position = UDim2.new(0, 0, 0, 0)
 		botaoToggle.Image = "rbxassetid://116669447347771"
 		botaoToggle.ImageColor3 = Color3.fromRGB(255, 255, 255)
@@ -15536,7 +15536,7 @@ local function main()
 		labelToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 		labelToggle.Size = UDim2.new(0, 174, 0, 14)
 		labelToggle.Position = UDim2.new(0, 18, 0, 2)
-		labelToggle.Text = "DataStore Editor"
+		labelToggle.Text = "Player Data"
 		labelToggle.TextSize = 9
 		labelToggle.TextXAlignment = Enum.TextXAlignment.Left
 		
