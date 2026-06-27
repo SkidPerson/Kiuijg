@@ -13758,20 +13758,6 @@ Main = (function()
 				local control = loadedPlugin
 				control.InitDeps(Main.GetInitDeps())
 
-				local appTable = {
-					Explorer = Apps.Explorer,
-					Properties = Apps.Properties,
-					ScriptViewer = Apps.ScriptViewer,
-					SecretServicePanel = Apps.SecretServicePanel,
-					SaveInstance = Apps.SaveInstance,
-					ModelViewer = Apps.ModelViewer,
-					Notebook = Apps.Notebook,
-					SettingsWindow = Apps.SettingsWindow,
-				}
-				if control.InitAfterMain then
-					control.InitAfterMain(appTable)
-				end
-
 				local moduleData = control.Main()
 				Apps[pluginDir] = moduleData
 				Main.AppControls[pluginDir] = control
@@ -14967,33 +14953,22 @@ Main = (function()
 			if #listfiles("dex/plugins") > 0 then
 				intro.SetProgress("Loading Plugin Files",0.8)
 				for _, pluginDir in pairs(listfiles("dex/plugins")) do
-					local ok, err = pcall(function()
-						local moduleData = Main.LoadPluginFile(pluginDir)
-						if not moduleData then return end
-						moduleData.PluginData = moduleData.PluginData or {}
+					local moduleData = Main.LoadPluginFile(pluginDir)
+					moduleData.PluginData = moduleData.PluginData or {}
 
-						local pluginFriendlyName = moduleData.PluginData.FriendlyName or "Unnamed Plugin"
-						intro.SetProgress("Initializing Plugin: ".. pluginFriendlyName, 0.9)
+					moduleData.Init()
 
-						local initOk, initErr = pcall(moduleData.Init)
-						if not initOk then
-							warn("Plugin Init failed ("..pluginFriendlyName.."): "..tostring(initErr))
-							return
-						end
+					local pluginFriendlyName = moduleData.PluginData.FriendlyName or moduleData.Window.GuiElems.Title.Text or "Unnamed Plugin"
+					local pluginName = moduleData.PluginData.Name or moduleData.Window.GuiElems.Title.Text:gsub(" ", "") or "unnamedPlugin"
 
-						pluginFriendlyName = moduleData.PluginData.FriendlyName or "Unnamed Plugin"
-						local pluginName = moduleData.PluginData.Name or pluginFriendlyName:gsub(" ", "") or "unnamedPlugin"
+					intro.SetProgress("Initializing Plugin: ".. pluginFriendlyName,0.9)
 
-						moduleData.PluginData.Name = pluginName
-						moduleData.PluginData.FriendlyName = pluginFriendlyName
+					moduleData.PluginData.Name = pluginName
+					moduleData.PluginData.FriendlyName = pluginFriendlyName
 
-						table.insert(Main.Plugins, moduleData)
-					end)
-					if not ok then
-						warn("Plugin load failed ("..tostring(pluginDir).."): "..tostring(err))
-					end
+					table.insert(Main.Plugins, moduleData)
 				end
-			end
+			end	
 		end
 		
 		
@@ -15034,6 +15009,11 @@ Main = (function()
 
 	return Main
 end)()
+
+-- Start
+Main.Init()
+
+--for i,v in pairs(Main.MissingEnv) do print(i,v) end
 
 -- Rspy Plugin
 
@@ -15438,7 +15418,7 @@ local main_ref, lib_ref, apps_ref, settings_ref
 local explorer_ref, properties_ref
 
 local plugin_data = {
-	Name         = "DataStoreEditor",
+	name         = "DataStoreEditor",
 	FriendlyName = "DataStore Editor",
 }
 
@@ -15505,15 +15485,18 @@ local function main()
 			return outrosJogadores
 		end
 		
-		-- Botão toggle (ImageButton)
-		local botaoToggle = Instance.new("ImageButton", scrollFrame)
+		-- Botão toggle com ícone de expandir/colapsar do Explorer (>) do Dex
+		local botaoToggle = Instance.new("TextButton", scrollFrame)
 		botaoToggle.Name = "ToggleButton"
 		botaoToggle.BorderSizePixel = 0
+		botaoToggle.TextSize = 11
+		botaoToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 		botaoToggle.BackgroundTransparency = 1
-		botaoToggle.Size = UDim2.new(0, 11, 0, 11)
-		botaoToggle.Position = UDim2.new(0, -2, 3, 0)
-		botaoToggle.Image = "rbxassetid://116669447347771"
-		botaoToggle.ImageColor3 = Color3.fromRGB(255, 255, 255)
+		botaoToggle.Size = UDim2.new(0, 16, 0, 16)
+		botaoToggle.Position = UDim2.new(0, 0, 0, 0)
+		botaoToggle.Text = ">"
+		botaoToggle.TextScaled = false
+		botaoToggle.Font = Enum.Font.GothamBold
 		botaoToggle.ZIndex = 2
 		
 		-- Criar ImageLabel para o ícone do minimize
@@ -15535,8 +15518,8 @@ local function main()
 		labelToggle.BackgroundTransparency = 1
 		labelToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
 		labelToggle.Size = UDim2.new(0, 174, 0, 14)
-		labelToggle.Position = UDim2.new(0, 87, 0, 2)
-		labelToggle.Text = "Player Data"
+		labelToggle.Position = UDim2.new(0, 18, 0, 2)
+		labelToggle.Text = "DataStore Editor"
 		labelToggle.TextSize = 9
 		labelToggle.TextXAlignment = Enum.TextXAlignment.Left
 		
@@ -15629,7 +15612,7 @@ local function main()
 		-- Conectar clique do botão toggle
 		botaoToggle.MouseButton1Click:Connect(function()
 			botoesVisiveis = not botoesVisiveis
-			botaoToggle.ImageTransparency = botoesVisiveis and 1 or 0
+			botaoToggle.Text = botoesVisiveis and "" or ">"
 			minIcon.Visible = botoesVisiveis
 			
 			-- Mostrar/esconder botão do jogador local e botões dos outros
@@ -15669,10 +15652,6 @@ return {
 if not isfolder("dex/plugins") then makefolder("dex/plugins") end
 writefile("dex/plugins/DataStoreEditor.lua", datastore_plugin_src)
 
--- Start
-Main.Init()
-
---for i,v in pairs(Main.MissingEnv) do print(i,v) end
 -- Adonis related 
 local function InitAdonisBypass()
 	local Adonis = { Name = "Adonis", Game = "*" }
@@ -15725,3 +15704,4 @@ local function InitAdonisBypass()
 end
 
 InitAdonisBypass()
+        
