@@ -94,51 +94,15 @@ local function main()
         Editor.Window = window
 
         local content = window.GuiElems.Content
-        -- content ocupa 100% da area interna da window
 
-        -- ============================================
-        -- BARRA DE TITULO INTERNA - cor (52,52,52)
-        -- replica do Frame_2 original (sem a parte de
-        -- posicionamento absoluto, aqui fica no topo
-        -- do content)
-        -- ============================================
-        local topBar = Instance.new("Frame")
-        topBar.Name = "TopBar"
-        topBar.BackgroundColor3 = Color3.fromRGB(52, 52, 52)
-        topBar.BorderSizePixel = 0
-        topBar.Size = UDim2.new(1, 0, 0, 22)
-        topBar.Position = UDim2.new(0, 0, 0, 0)
-        topBar.Parent = content
-
-        -- TextLabel_a: "DataStore Editor"
-        local titleLabel = Instance.new("TextLabel")
-        titleLabel.Name = "TitleLabel"
-        titleLabel.BackgroundTransparency = 1
-        titleLabel.BorderSizePixel = 0
-        titleLabel.TextSize = 15
-        titleLabel.FontFace = Font.new(
-            [[rbxasset://fonts/families/SourceSansPro.json]],
-            Enum.FontWeight.Regular,
-            Enum.FontStyle.Normal
-        )
-        titleLabel.TextColor3 = Color3.fromRGB(222, 222, 222)
-        titleLabel.Size = UDim2.new(0, 88, 0, 20)
-        titleLabel.Position = UDim2.new(0, 4, 0, 1)
-        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-        titleLabel.Text = "DataStore Editor"
-        titleLabel.Parent = topBar
-
-        -- ============================================
-        -- SCROLLING FRAME - replica do ScrollingFrame_3
-        -- cor (46,46,46), ocupa o restante abaixo da
-        -- barra de titulo interna
-        -- ============================================
+        -- ScrollingFrame ocupa todo o content
+        -- (header ja vem da Window do Dex)
         local scrollFrame = Instance.new("ScrollingFrame")
         scrollFrame.Name = "PlayerScroll"
         scrollFrame.BackgroundColor3 = Color3.fromRGB(46, 46, 46)
         scrollFrame.BorderSizePixel = 0
-        scrollFrame.Position = UDim2.new(0, 0, 0, 22)
-        scrollFrame.Size = UDim2.new(1, 0, 1, -22)
+        scrollFrame.Position = UDim2.new(0, 0, 0, 0)
+        scrollFrame.Size = UDim2.new(1, 0, 1, 0)
         scrollFrame.ScrollBarThickness = 4
         scrollFrame.ScrollBarImageColor3 = Color3.fromRGB(120, 120, 120)
         scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -174,7 +138,7 @@ local function main()
         playerDataLabel.TextColor3 = Color3.fromRGB(222, 222, 222)
         playerDataLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         playerDataLabel.Size = UDim2.new(0, 138, 0, 10)
-        playerDataLabel.Position = UDim2.new(0, 20, 0, 6)
+        playerDataLabel.Position = UDim2.new(0, 60, 0, 6)
         playerDataLabel.TextXAlignment = Enum.TextXAlignment.Left
         playerDataLabel.Text = "PlayerData"
         playerDataLabel.Parent = scrollFrame
@@ -188,6 +152,201 @@ local function main()
         local LocalPlayer = Players.LocalPlayer
         local playerButtons = {}
         local isListVisible = false
+        local selectedBtn = nil
+
+        -- ============================================
+        -- JANELA DE EDIÇÃO (abre ao clicar num player)
+        -- baseada no layout LMG2L, dentro do Dex Window
+        -- ============================================
+        local editWindow = nil
+
+        local function openEditWindow(playerName)
+            -- Fecha janela anterior se existir
+            if editWindow then
+                editWindow:Close()
+                editWindow = nil
+            end
+
+            local target = Players:FindFirstChild(playerName)
+            if not target then return end
+
+            -- ── Detecta o que tem no player ──────────────────────
+            local valueObj   = nil   -- ValueBase encontrado
+            local valueType  = nil   -- "inventory" | ClassName do ValueBase | nil
+            local inventory  = nil   -- Folder de inventário
+
+            -- 1. Pasta chamada "Inventory" tem prioridade
+            inventory = target:FindFirstChild("Inventory")
+            if inventory and inventory:IsA("Folder") then
+                valueType = "inventory"
+            else
+                inventory = nil
+                -- 2. Qualquer Folder dentro do player
+                local folder = target:FindFirstChildWhichIsA("Folder")
+                if folder then
+                    inventory = folder
+                    valueType = "inventory"
+                else
+                    -- 3. Qualquer ValueBase direto no player
+                    local found = target:FindFirstChildWhichIsA("ValueBase")
+                    if found then
+                        valueObj  = found
+                        valueType = found.ClassName
+                    end
+                end
+            end
+
+            -- ── Monta o texto inicial do TextBox ─────────────────
+            local initialText = ""
+            local infoText    = ""
+
+            if valueType == "inventory" and inventory then
+                local items = {}
+                for _, child in ipairs(inventory:GetChildren()) do
+                    table.insert(items, child.Name)
+                end
+                -- formato igual ao LMG2L: ["item","item","item"]
+                local quoted = {}
+                for _, v in ipairs(items) do
+                    table.insert(quoted, '"' .. v .. '"')
+                end
+                initialText = '{"Inventory":[' .. table.concat(quoted, ",") .. "]}"
+                infoText    = "Inventory — " .. inventory.Name .. " (" .. #items .. " items)"
+            elseif valueObj then
+                initialText = tostring(valueObj.Value)
+                infoText    = valueObj.ClassName .. " — " .. valueObj.Name
+            else
+                initialText = ""
+                infoText    = "(nenhum value encontrado)"
+            end
+
+            -- ── Cria a Window do Dex ──────────────────────────────
+            editWindow = Lib.Window.new()
+            editWindow:SetTitle("Edit Value — " .. playerName)
+            editWindow:Resize(248, 136)
+
+            local eContent = editWindow.GuiElems.Content
+
+            -- Frame_3 do LMG2L: fundo escuro
+            local bodyFrame = Instance.new("Frame")
+            bodyFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+            bodyFrame.BorderSizePixel  = 0
+            bodyFrame.Size             = UDim2.new(1, 0, 1, 0)
+            bodyFrame.Parent           = eContent
+
+            -- Label de info (tipo/nome) no topo — TextLabel_8 do LMG2L
+            local infoLabel = Instance.new("TextLabel")
+            infoLabel.BackgroundTransparency = 1
+            infoLabel.BorderSizePixel        = 0
+            infoLabel.TextSize               = 13
+            infoLabel.FontFace               = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+            infoLabel.TextColor3             = Color3.fromRGB(180, 180, 180)
+            infoLabel.TextXAlignment         = Enum.TextXAlignment.Left
+            infoLabel.Size                   = UDim2.new(1, -4, 0, 16)
+            infoLabel.Position               = UDim2.new(0, 4, 0, 8)
+            infoLabel.Text                   = infoText
+            infoLabel.Parent                 = bodyFrame
+
+            -- Label "Value:" — TextLabel_5 do LMG2L
+            local valueLabel = Instance.new("TextLabel")
+            valueLabel.BackgroundTransparency = 1
+            valueLabel.BorderSizePixel        = 0
+            valueLabel.TextSize               = 15
+            valueLabel.FontFace               = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+            valueLabel.TextColor3             = Color3.fromRGB(255, 255, 255)
+            valueLabel.Size                   = UDim2.new(0, 50, 0, 24)
+            valueLabel.Position               = UDim2.new(0, 0, 0, 32)
+            valueLabel.Text                   = "Value:"
+            valueLabel.Parent                 = bodyFrame
+
+            -- TextBox do valor — TextBox_4 do LMG2L
+            local valueBox = Instance.new("TextBox")
+            valueBox.BackgroundColor3  = Color3.fromRGB(38, 38, 38)
+            valueBox.BorderSizePixel   = 0
+            valueBox.TextXAlignment    = Enum.TextXAlignment.Left
+            valueBox.TextWrapped       = true
+            valueBox.TextSize          = 14
+            valueBox.TextColor3        = Color3.fromRGB(255, 255, 255)
+            valueBox.RichText          = false
+            valueBox.ClipsDescendants  = true
+            valueBox.FontFace          = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+            valueBox.Size              = UDim2.new(0, 186, 0, 18)
+            valueBox.Position          = UDim2.new(0, 54, 0, 34)
+            valueBox.Text              = initialText
+            valueBox.Parent            = bodyFrame
+
+            -- Botão Save — TextButton_6 do LMG2L
+            local saveBtn = Instance.new("TextButton")
+            saveBtn.BackgroundColor3 = Color3.fromRGB(69, 69, 69)
+            saveBtn.BorderSizePixel  = 0
+            saveBtn.TextSize         = 15
+            saveBtn.TextColor3       = Color3.fromRGB(150, 150, 150)
+            saveBtn.FontFace         = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+            saveBtn.Size             = UDim2.new(0, 110, 0, 22)
+            saveBtn.Position         = UDim2.new(0, 8, 0, 90)
+            saveBtn.Text             = "Save"
+            saveBtn.Parent           = bodyFrame
+
+            -- Botão Cancel — TextButton_7 do LMG2L
+            local cancelBtn = Instance.new("TextButton")
+            cancelBtn.BackgroundColor3 = Color3.fromRGB(69, 69, 69)
+            cancelBtn.BorderSizePixel  = 0
+            cancelBtn.TextSize         = 15
+            cancelBtn.TextColor3       = Color3.fromRGB(210, 210, 210)
+            cancelBtn.FontFace         = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+            cancelBtn.Size             = UDim2.new(0, 110, 0, 22)
+            cancelBtn.Position         = UDim2.new(0, 130, 0, 90)
+            cancelBtn.Text             = "Cancel"
+            cancelBtn.Parent           = bodyFrame
+
+            -- ── Save ─────────────────────────────────────────────
+            saveBtn.MouseButton1Click:Connect(function()
+                local raw = valueBox.Text
+                if valueType == "inventory" and inventory then
+                    -- Parse simples: pega tudo entre [ e ] e divide por vírgula
+                    local inner = raw:match("%[(.-)%]")
+                    local source = inner or raw
+                    -- Remove aspas e espaços e recria os filhos
+                    for _, child in ipairs(inventory:GetChildren()) do child:Destroy() end
+                    for item in source:gmatch('"([^"]+)"') do
+                        local sv = Instance.new("StringValue")
+                        sv.Name   = item
+                        sv.Parent = inventory
+                    end
+                    -- Fallback: sem aspas, separado por vírgula
+                    if not source:find('"') then
+                        for item in source:gmatch("[^,]+") do
+                            item = item:match("^%s*(.-)%s*$")
+                            if item ~= "" then
+                                local sv = Instance.new("StringValue")
+                                sv.Name   = item
+                                sv.Parent = inventory
+                            end
+                        end
+                    end
+                elseif valueObj then
+                    if valueType == "BoolValue" then
+                        valueObj.Value = (raw:lower() == "true")
+                    elseif valueType == "IntValue" then
+                        valueObj.Value = math.floor(tonumber(raw) or valueObj.Value)
+                    elseif valueType == "NumberValue" or valueType == "DoubleConstrainedValue" or valueType == "IntConstrainedValue" then
+                        valueObj.Value = tonumber(raw) or valueObj.Value
+                    else
+                        valueObj.Value = raw
+                    end
+                end
+                editWindow:Close()
+                editWindow = nil
+            end)
+
+            -- ── Cancel ───────────────────────────────────────────
+            cancelBtn.MouseButton1Click:Connect(function()
+                editWindow:Close()
+                editWindow = nil
+            end)
+
+            editWindow:Show()
+        end
 
         local function recalcCanvas()
             local total = 24 + (#playerButtons * 18) + 10
@@ -217,30 +376,44 @@ local function main()
             -- LocalPlayer em dourado, outros em cinza claro
             if isLocalPlayer then
                 btn.Text = playerName
-                btn.TextColor3 = Color3.fromRGB(255, 215, 80)
+                btn.TextColor3 = Color3.fromRGB(211, 211, 211)
             else
                 btn.Text = playerName
                 btn.TextColor3 = Color3.fromRGB(211, 211, 211)
             end
 
-            -- Hover highlight sutil
+            -- Hover highlight sutil (só se não estiver selecionado)
             btn.MouseEnter:Connect(function()
-                if btn.Visible then
+                if btn.Visible and selectedBtn ~= btn then
                     btn.BackgroundTransparency = 0.8
                     btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
                 end
             end)
             btn.MouseLeave:Connect(function()
-                btn.BackgroundTransparency = 1
-                btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                if selectedBtn ~= btn then
+                    btn.BackgroundTransparency = 1
+                    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                end
             end)
 
-            -- Clique: mostra o player no Properties do Dex
+            -- Clique: seleciona com fundo azul e abre janela de edição
             btn.MouseButton1Click:Connect(function()
+                -- Desmarca o anterior
+                if selectedBtn and selectedBtn ~= btn then
+                    selectedBtn.BackgroundTransparency = 1
+                    selectedBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                end
+                -- Marca o atual
+                selectedBtn = btn
+                btn.BackgroundTransparency = 0
+                btn.BackgroundColor3 = Settings.Theme.ListSelection
+
                 local target = Players:FindFirstChild(playerName)
                 if target and Properties then
                     Properties.ShowInstance(target)
                 end
+
+                openEditWindow(playerName)
             end)
 
             table.insert(playerButtons, btn)
@@ -15080,7 +15253,7 @@ Main = (function()
 		
 		Main.CreateApp({Name = "Save Instance", IconMap = Main.LargeIcons, Icon = "Book", Window = SaveInstance.Window})
 		
-		Main.CreateApp({Name = "Editor", IconMap = Main.LargeIcons, Icon = "Properties", Window = Editor.Window})
+		Main.CreateApp({Name = "Editor", Icon = "rbxthumb://type=Asset&id=132920803719581&w=150&h=150", Window = Editor.Window})
 		
 		Lib.ShowGui(gui)
 	end
@@ -15205,12 +15378,14 @@ Main = (function()
 		SaveInstance.Init()
 		ModelViewer.Init()
 		SettingsWindow.Init()
+		Editor.Init()
 		
 		
 		if env.readfile and listfiles then
 			if #listfiles("dex/plugins") > 0 then
 				intro.SetProgress("Loading Plugin Files",0.8)
 				for _, pluginDir in pairs(listfiles("dex/plugins")) do
+					if pluginDir:find("DataStoreEditor") then continue end
 					local moduleData = Main.LoadPluginFile(pluginDir)
 					moduleData.PluginData = moduleData.PluginData or {}
 
@@ -15669,189 +15844,6 @@ if not isfolder("dex/plugins") then makefolder("dex/plugins") end
  
 writefile("dex/plugins/RemoteSpy.lua", plugin_src)
 
--- ── DATASTORE EDITOR PLUGIN ────────────────────────────────────────────
-
-local datastore_plugin_src = [[
-local main_ref, lib_ref, apps_ref, settings_ref
-local explorer_ref, properties_ref
-
-local plugin_data = {
-	name         = "DataStoreEditor",
-	FriendlyName = "DataStore Editor",
-}
-
-local function initDeps(data)
-	main_ref     = data.Main
-	lib_ref      = data.Lib
-	apps_ref     = data.Apps
-	settings_ref = data.Settings
-end
-
-local function initAfterMain(t)
-	explorer_ref   = t.Explorer
-	properties_ref = t.Properties
-end
-
-local function main()
-	local ds = {}
-	ds.PluginData = plugin_data
-
-	local window
-
-	ds.Init = function()
-		window = lib_ref.Window.new()
-		window:SetTitle("DataStore Editor")
-		window:Resize(260, 472)
-		
-		local content = window.GuiElems.Content
-		
-		-- Criar frame principal
-		local mainFrame = Instance.new("Frame", content)
-		mainFrame.Name = "MainFrame"
-		mainFrame.BorderSizePixel = 0
-		mainFrame.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
-		mainFrame.Size = UDim2.new(1, 0, 1, 0)
-		mainFrame.Position = UDim2.new(0, 0, 0, 0)
-		mainFrame.Visible = true
-		
-		-- ScrollingFrame para a lista (como na GUI original)
-		local scrollFrame = Instance.new("ScrollingFrame", mainFrame)
-		scrollFrame.Name = "ScrollingFrame"
-		scrollFrame.BorderSizePixel = 0
-		scrollFrame.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
-		scrollFrame.Size = UDim2.new(0, 260, 0, 452)
-		scrollFrame.Position = UDim2.new(0, 0, 0, 0)
-		scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-		scrollFrame.ScrollBarThickness = 8
-		
-		local selectedButton = nil
-		local botoesVisiveis = false
-		
-		-- Obter jogador local
-		local localPlayer = game:GetService("Players").LocalPlayer
-		local localPlayerName = localPlayer and localPlayer.Name or "Unknown"
-		
-		-- Obter lista de outros jogadores
-		local function obterOutrosJogadores()
-			local outrosJogadores = {}
-			for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-				if player ~= localPlayer then
-					table.insert(outrosJogadores, player.Name)
-				end
-			end
-			return outrosJogadores
-		end
-		
-		-- Botão toggle (v / >) - na posição original
-		local botaoToggle = Instance.new("TextButton", scrollFrame)
-		botaoToggle.BorderSizePixel = 0
-		botaoToggle.TextSize = 9
-		botaoToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-		botaoToggle.BackgroundTransparency = 1
-		botaoToggle.Size = UDim2.new(0, 16, 0, 16)
-		botaoToggle.Position = UDim2.new(0, 0, 0, 0)
-		botaoToggle.Text = ">"
-		
-		-- Label info do toggle
-		local labelToggle = Instance.new("TextLabel", botaoToggle)
-		labelToggle.BorderSizePixel = 0
-		labelToggle.BackgroundTransparency = 1
-		labelToggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-		labelToggle.Size = UDim2.new(0, 174, 0, 14)
-		labelToggle.Position = UDim2.new(0, 18, 0, 2)
-		labelToggle.Text = "DataStore Editor"
-		labelToggle.TextSize = 9
-		
-		-- Função para criar item de jogador (botão)
-		local function criarBotaoJogador(nome, yPos)
-			local botaoJogador = Instance.new("TextButton", scrollFrame)
-			botaoJogador.BorderSizePixel = 0
-			botaoJogador.TextXAlignment = Enum.TextXAlignment.Left
-			botaoJogador.TextColor3 = Color3.fromRGB(255, 255, 255)
-			botaoJogador.BackgroundTransparency = 1
-			botaoJogador.Size = UDim2.new(0, 228, 0, 16)
-			botaoJogador.Position = UDim2.new(0, 92, 0, yPos)
-			botaoJogador.Text = "'" .. nome .. "'"
-			botaoJogador.TextSize = 9
-			
-			-- Conectar clique - fundo fica azul ao selecionar
-			botaoJogador.MouseButton1Click:Connect(function()
-				-- Desselecionar anterior
-				if selectedButton then
-					selectedButton.BackgroundTransparency = 1
-					selectedButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-				end
-				
-				-- Selecionar este - fundo azul
-				selectedButton = botaoJogador
-				botaoJogador.BackgroundTransparency = 0
-				botaoJogador.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
-			end)
-			
-			return botaoJogador
-		end
-		
-		-- Função para reconstruir a lista
-		local function reconstruirLista()
-			-- Limpar itens anteriores (não o botão toggle)
-			local children = scrollFrame:GetChildren()
-			for i = #children, 1, -1 do
-				if children[i] ~= botaoToggle then
-					children[i]:Destroy()
-				end
-			end
-			
-			local yOffset = 0
-			
-			-- Criar botão do jogador local
-			if botoesVisiveis then
-				criarBotaoJogador(localPlayerName, yOffset)
-				yOffset = yOffset + 18
-				
-				-- Criar botões dos outros jogadores
-				local outrosJogadores = obterOutrosJogadores()
-				for _, playerName in ipairs(outrosJogadores) do
-					criarBotaoJogador(playerName, yOffset)
-					yOffset = yOffset + 18
-				end
-			end
-			
-			scrollFrame.CanvasSize = UDim2.new(0, 0, 0, yOffset + 20)
-		end
-		
-		-- Conectar clique do botão toggle
-		botaoToggle.MouseButton1Click:Connect(function()
-			botoesVisiveis = not botoesVisiveis
-			botaoToggle.Text = botoesVisiveis and "v" or ">"
-			reconstruirLista()
-		end)
-		
-		-- Atualizar lista quando jogadores entrarem/saírem
-		game:GetService("Players").PlayerAdded:Connect(function()
-			reconstruirLista()
-		end)
-		
-		game:GetService("Players").PlayerRemoving:Connect(function()
-			reconstruirLista()
-		end)
-		
-		ds.Window = window
-	end
-
-	return ds
-end
-
-return {
-	InitDeps      = initDeps,
-	InitAfterMain = initAfterMain,
-	Main          = main,
-	PluginData    = plugin_data,
-}
-
-]]
-
-if not isfolder("dex/plugins") then makefolder("dex/plugins") end
-writefile("dex/plugins/DataStoreEditor.lua", datastore_plugin_src)
 
 -- Adonis related 
 local function InitAdonisBypass()
